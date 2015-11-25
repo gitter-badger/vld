@@ -170,8 +170,7 @@ LPVOID VisualLeakDetector::_RtlAllocateHeap (HANDLE heap, DWORD flags, SIZE_T si
         return block;
 
     if (!g_DbgHelp.IsLockedByCurrentThread()) { // skip dbghelp.dll calls
-        context_t context;
-        CaptureContext cc(context, RtlAllocateHeap);
+        CaptureContext cc(RtlAllocateHeap);
         cc.Set(heap, block, NULL, size);
     }
 
@@ -191,8 +190,7 @@ LPVOID VisualLeakDetector::_HeapAlloc (HANDLE heap, DWORD flags, SIZE_T size)
         return block;
 
     if (!g_DbgHelp.IsLockedByCurrentThread()) { // skip dbghelp.dll calls
-        context_t context;
-        CaptureContext cc(context, HeapAlloc);
+        CaptureContext cc(HeapAlloc);
         cc.Set(heap, block, NULL, size);
     }
 
@@ -291,8 +289,7 @@ LPVOID VisualLeakDetector::_RtlReAllocateHeap (HANDLE heap, DWORD flags, LPVOID 
         return newmem;
 
     if (!g_DbgHelp.IsLockedByCurrentThread()) { // skip dbghelp.dll calls
-        context_t context;
-        CaptureContext cc(context, RtlReAllocateHeap);
+        CaptureContext cc(RtlReAllocateHeap);
         cc.Set(heap, mem, newmem, size);
     }
 
@@ -312,8 +309,7 @@ LPVOID VisualLeakDetector::_HeapReAlloc (HANDLE heap, DWORD flags, LPVOID mem, S
         return newmem;
 
     if (!g_DbgHelp.IsLockedByCurrentThread()) { // skip dbghelp.dll calls
-        context_t context;
-        CaptureContext cc(context, HeapReAlloc);
+        CaptureContext cc(HeapReAlloc);
         cc.Set(heap, mem, newmem, size);
     }
 
@@ -422,8 +418,7 @@ LPVOID VisualLeakDetector::_CoTaskMemAlloc (SIZE_T size)
         pCoTaskMemAlloc = (CoTaskMemAlloc_t)g_vld._RGetProcAddress(ole32, "CoTaskMemAlloc");
     }
 
-    context_t context;
-    CaptureContext cc(context, (void*)pCoTaskMemAlloc);
+    CaptureContext cc((void*)pCoTaskMemAlloc);
 
     // Do the allocation. The block will be mapped by _RtlAllocateHeap.
     return pCoTaskMemAlloc(size);
@@ -456,8 +451,7 @@ LPVOID VisualLeakDetector::_CoTaskMemRealloc (LPVOID mem, SIZE_T size)
         pCoTaskMemRealloc = (CoTaskMemRealloc_t)g_vld._RGetProcAddress(ole32, "CoTaskMemRealloc");
     }
 
-    context_t context;
-    CaptureContext cc(context, (void*)pCoTaskMemRealloc);
+    CaptureContext cc((void*)pCoTaskMemRealloc);
 
     // Do the allocation. The block will be mapped by _RtlReAllocateHeap.
     return pCoTaskMemRealloc(mem, size);
@@ -508,10 +502,9 @@ LPVOID VisualLeakDetector::Alloc (_In_ SIZE_T size)
 #ifdef PRINTHOOKCALLS
     DbgReport(_T(__FUNCTION__) _T( "\n"));
 #endif
-    context_t context;
     UINT_PTR* cVtablePtr = (UINT_PTR*)((UINT_PTR*)m_iMalloc)[0];
     UINT_PTR iMallocAlloc = cVtablePtr[3];
-    CaptureContext cc(context, (void*)iMallocAlloc);
+    CaptureContext cc((void*)iMallocAlloc);
 
     // Do the allocation. The block will be mapped by _RtlAllocateHeap.
     assert(m_iMalloc != NULL);
@@ -632,10 +625,9 @@ LPVOID VisualLeakDetector::Realloc (_In_opt_ LPVOID mem, _In_ SIZE_T size)
 #ifdef PRINTHOOKCALLS
     DbgReport(_T(__FUNCTION__) _T( "\n"));
 #endif
-    context_t context;
     UINT_PTR* cVtablePtr = (UINT_PTR*)((UINT_PTR*)m_iMalloc)[0];
     UINT_PTR iMallocRealloc = cVtablePtr[4];
-    CaptureContext cc(context, (void*)iMallocRealloc);
+    CaptureContext cc((void*)iMallocRealloc);
 
     // Do the allocation. The block will be mapped by _RtlReAllocateHeap.
     assert(m_iMalloc != NULL);
@@ -678,8 +670,7 @@ BSTR VisualLeakDetector::_SysAllocString(__in_z_opt const OLECHAR * psz)
     DbgReport(_T(__FUNCTION__) _T( "\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SysAllocString);
+    CaptureContext cc((void*)SysAllocString);
     return SysAllocString(psz);
 }
 
@@ -689,8 +680,7 @@ BSTR VisualLeakDetector::_SysAllocStringLen(__in_ecount_opt(ui) const OLECHAR * 
     DbgReport(_T(__FUNCTION__) _T( "\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SysAllocStringLen);
+    CaptureContext cc((void*)SysAllocStringLen);
     return SysAllocStringLen(strIn, ui);
 }
 
@@ -700,8 +690,7 @@ BSTR VisualLeakDetector::_SysAllocStringByteLen(__in_z_opt LPCSTR psz, __in UINT
     DbgReport(_T(__FUNCTION__) _T( "\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SysAllocStringByteLen);
+    CaptureContext cc((void*)SysAllocStringByteLen);
     return SysAllocStringByteLen(psz, len);
 }
 
@@ -711,8 +700,7 @@ INT VisualLeakDetector::_SysReAllocString(__deref_inout_ecount_z(stringLength(ps
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SysReAllocString);
+    CaptureContext cc((void*)SysReAllocString);
     return SysReAllocString(pbstr, psz);
 }
 
@@ -722,8 +710,7 @@ INT VisualLeakDetector::_SysReAllocStringLen(__deref_inout_ecount_z(len + 1) BST
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SysReAllocStringLen);
+    CaptureContext cc((void*)SysReAllocStringLen);
     return SysReAllocStringLen(pbstr, psz, len);
 }
 
@@ -733,8 +720,7 @@ HRESULT VisualLeakDetector::_SafeArrayAllocData(__in SAFEARRAY * psa)
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayAllocData);
+    CaptureContext cc((void*)SafeArrayAllocData);
     return SafeArrayAllocData(psa);
 }
 
@@ -744,8 +730,7 @@ HRESULT VisualLeakDetector::_SafeArrayAllocDescriptor(__in UINT cDims, __deref_o
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayAllocDescriptor);
+    CaptureContext cc((void*)SafeArrayAllocDescriptor);
     return SafeArrayAllocDescriptor(cDims, ppsaOut);
 }
 
@@ -755,8 +740,7 @@ HRESULT VisualLeakDetector::_SafeArrayAllocDescriptorEx(__in VARTYPE vt, __in UI
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayAllocDescriptorEx);
+    CaptureContext cc((void*)SafeArrayAllocDescriptorEx);
     return SafeArrayAllocDescriptorEx(vt, cDims, ppsaOut);
 }
 
@@ -766,8 +750,7 @@ SAFEARRAY* VisualLeakDetector::_SafeArrayCreate(__in VARTYPE vt, __in UINT cDims
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayCreate);
+    CaptureContext cc((void*)SafeArrayCreate);
     return SafeArrayCreate(vt, cDims, rgsabound);
 }
 
@@ -777,8 +760,7 @@ SAFEARRAY* VisualLeakDetector::_SafeArrayCreateEx(__in VARTYPE vt, __in UINT cDi
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayCreateEx);
+    CaptureContext cc((void*)SafeArrayCreateEx);
     return SafeArrayCreateEx(vt, cDims, rgsabound, pvExtra);
 }
 
@@ -788,8 +770,7 @@ SAFEARRAY* VisualLeakDetector::_SafeArrayCreateVector(__in VARTYPE vt, __in LONG
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayCreateVector);
+    CaptureContext cc((void*)SafeArrayCreateVector);
     return SafeArrayCreateVector(vt, lLbound, cElements);
 }
 
@@ -799,8 +780,7 @@ SAFEARRAY* VisualLeakDetector::_SafeArrayCreateVectorEx(__in VARTYPE vt, __in LO
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayCreateVectorEx);
+    CaptureContext cc((void*)SafeArrayCreateVectorEx);
     return SafeArrayCreateVectorEx(vt, lLbound, cElements, pvExtra);
 }
 
@@ -810,7 +790,6 @@ HRESULT VisualLeakDetector::_SafeArrayRedim(__inout SAFEARRAY * psa, __in SAFEAR
     DbgReport(_T(__FUNCTION__) _T("\n"));
 #endif
 
-    context_t context;
-    CaptureContext cc(context, (void*)SafeArrayRedim);
+    CaptureContext cc((void*)SafeArrayRedim);
     return SafeArrayRedim(psa, psaboundNew);
 }
